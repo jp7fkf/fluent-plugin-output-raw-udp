@@ -4,8 +4,8 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 Gem::Specification.new do |spec|
   spec.name    = "fluent-plugin-output-raw-udp"
   spec.version = "0.1.0"
-  spec.authors = ["TODO: Write your name"]
-  spec.email   = ["TODO: Write your email"]
+  spec.authors = ["Yudai Hashimoto"]
+  spec.email   = ["jp7fkf@gmail.com"]
 
   spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
   spec.description   = %q{TODO: Write a longer description or delete this line.}
