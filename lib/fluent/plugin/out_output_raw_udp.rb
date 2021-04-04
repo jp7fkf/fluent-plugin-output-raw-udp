@@ -16,18 +16,23 @@
 require "fluent/plugin/output"
 
 require "socket"
+require "json"
 
 module Fluent
   module Plugin
     class OutputRawUdpOutput < Fluent::Plugin::Output
       Fluent::Plugin.register_output("output_raw_udp", self)
 
-      # Enable threads if you are writing an async buffered plugin.
-      helpers :thread
+      helpers :compat_parameters, :formatter, :inject
 
       # Define parameters for your plugin.
       config_param :host, :string, :default => nil
       config_param :port, :integer, :default => 514
+
+      config_section :format do
+        config_set_default :@type, "json" #"out_file"
+      end
+
 
       config_section :buffer do
         config_set_default :flush_mode, :interval
@@ -36,11 +41,20 @@ module Fluent
         config_set_default :flush_thread_burst_interval, 0.5
       end
 
+      #config_section :format do
+      #  config_set_default :@type, 'out_file'
+      #end
+
       def configure(conf)
+        compat_parameters_convert(conf, :buffer, :formatter, :inject)
+
         super
+
         if @host.nil?
           raise ConfigError, "host is required"
         end
+
+	@formatter = formatter_create
 
         #@senders = []
       end
@@ -48,6 +62,11 @@ module Fluent
       def initialize()
         super
         @socket = UDPSocket.new
+      end
+
+      def format(tag, time, record)
+        r = inject_values_to_record(tag, time, record)
+        @formatter.format(tag, time, r)
       end
 
 
@@ -77,17 +96,9 @@ module Fluent
 
         # For standard chunk format (without `#format()` method)
         chunk.each do |time, record|
-          #@socket.send(record["message"], 0, @host, @port)
           @socket.send(record, 0, @host, @port)
         end
 
-        # For custom format (when `#format()` implemented)
-        # File.open(real_path, 'w+')
-
-        # or `#write_to(io)` is available
-        # File.open(real_path, 'w+') do |file|
-        #   chunk.write_to(file)
-        # end
       end
 
     end
