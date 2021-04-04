@@ -14,16 +14,12 @@
 # limitations under the License.
 
 require "fluent/plugin/output"
-
 require "socket"
 
 module Fluent
   module Plugin
     class OutputRawUdpOutput < Fluent::Plugin::Output
       Fluent::Plugin.register_output("output_raw_udp", self)
-
-      # Enable threads if you are writing an async buffered plugin.
-      helpers :thread
 
       # Define parameters for your plugin.
       config_param :host, :string, :default => nil
@@ -41,8 +37,6 @@ module Fluent
         if @host.nil?
           raise ConfigError, "host is required"
         end
-
-        #@senders = []
       end
 
       def initialize()
@@ -50,21 +44,24 @@ module Fluent
         @socket = UDPSocket.new
       end
 
+      def start()
+        super
+        prefer_buffered_processing()
+        prefer_delayed_commit()
+      end
+
+      def shutdown()
+        super
+      end
 
       #### Non-Buffered Output #############################
-      # Implement `process()` if your plugin is non-buffered.
-      # Read "Non-Buffered output" for details.
-      ######################################################
-      #def process(tag, es)
-      #  es.each do |time, record|
-      #    @socket.send(record['message'], 0, @host, @port)
-      #  end
-      #end
+      def process(tag, es)
+        es.each do |time, record|
+          @socket.send(record['message'], 0, @host, @port)
+        end
+      end
 
       #### Sync Buffered Output ##############################
-      # Implement `write()` if your plugin uses normal buffer.
-      # Read "Sync Buffered Output" for details.
-      ########################################################
       def write(chunk)
 	return if chunk.empty?
 
@@ -73,21 +70,19 @@ module Fluent
         #host = @host
         #port = @port
 
-        log.debug 'writing data to file', chunk_id: dump_unique_id_hex(chunk.unique_id)
-
-        # For standard chunk format (without `#format()` method)
         chunk.each do |time, record|
-          #@socket.send(record["message"], 0, @host, @port)
           @socket.send(record, 0, @host, @port)
         end
 
-        # For custom format (when `#format()` implemented)
-        # File.open(real_path, 'w+')
+      end
 
-        # or `#write_to(io)` is available
-        # File.open(real_path, 'w+') do |file|
-        #   chunk.write_to(file)
-        # end
+      private
+      def prefer_buffered_processing()
+        true
+      end
+
+      def prefer_delayed_commit()
+        true
       end
 
     end
