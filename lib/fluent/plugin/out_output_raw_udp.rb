@@ -21,7 +21,6 @@ module Fluent
     class OutputRawUdpOutput < Fluent::Plugin::Output
       Fluent::Plugin.register_output("output_raw_udp", self)
 
-      # Define parameters for your plugin.
       config_param :host, :string, :default => nil
       config_param :port, :integer, :default => 514
 
@@ -41,7 +40,6 @@ module Fluent
 
       def initialize()
         super
-        @socket = UDPSocket.new
       end
 
       def start()
@@ -56,24 +54,22 @@ module Fluent
 
       #### Non-Buffered Output #############################
       def process(tag, es)
-        es.each do |time, record|
-          @socket.send(record['message'], 0, @host, @port)
-        end
+        UDPSocket.open() {|socket|
+          es.each do |time, record|
+            socket.send(record, 0, @host, @port)
+          end
+	}
       end
 
       #### Sync Buffered Output ##############################
       def write(chunk)
 	return if chunk.empty?
 
-        #host = extract_placeholders(@host, chunk.metadata)
-        #port = extract_placeholders(@port, chunk.metadata)
-        #host = @host
-        #port = @port
-
-        chunk.each do |time, record|
-          @socket.send(record, 0, @host, @port)
-        end
-
+        UDPSocket.open() {|socket|
+          chunk.each do |time, record|
+            socket.send(record, 0, @host, @port)
+          end
+	}
       end
 
       private
