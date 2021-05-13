@@ -54,22 +54,22 @@ module Fluent
 
       #### Non-Buffered Output #############################
       def process(tag, es)
-        UDPSocket.open() {|socket|
-          es.each do |time, record|
+        es.each do |time, record|
+          UDPSocket.open() {|socket|
             socket.send(record, 0, @host, @port)
-          end
-	}
+          }
+        end
       end
 
       #### Sync Buffered Output ##############################
       def write(chunk)
-	return if chunk.empty?
+        return if chunk.empty?
 
-        UDPSocket.open() {|socket|
-          chunk.each do |time, record|
+        chunk.each do |time, record|
+          UDPSocket.open() {|socket|
             socket.send(record, 0, @host, @port)
-          end
-	}
+          }
+        end
       end
 
       private
