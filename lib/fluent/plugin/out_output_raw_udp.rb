@@ -55,9 +55,7 @@ module Fluent
       #### Non-Buffered Output #############################
       def process(tag, es)
         es.each do |time, record|
-          UDPSocket.open() {|socket|
-            socket.send(record, 0, @host, @port)
-          }
+          UDPSocket.open.send(record, 0, @host, @port)
         end
       end
 
@@ -66,9 +64,7 @@ module Fluent
         return if chunk.empty?
 
         chunk.each do |time, record|
-          UDPSocket.open() {|socket|
-            socket.send(record, 0, @host, @port)
-          }
+          UDPSocket.open.send(record, 0, @host, @port)
         end
       end
 
